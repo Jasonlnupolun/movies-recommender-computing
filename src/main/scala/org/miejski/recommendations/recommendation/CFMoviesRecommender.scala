@@ -1,5 +1,6 @@
 package org.miejski.recommendations.recommendation
 
+import org.apache.log4j.Logger
 import org.apache.spark.rdd.RDD
 import org.miejski.recommendations.evaluation.model.{MovieRating, User}
 import org.miejski.recommendations.model.{Movie, UserRating}
@@ -11,6 +12,9 @@ class CFMoviesRecommender(neighbours: Neighbours,
                           predictionMethod: (UserAverageRating, Seq[NeighbourInfo], Seq[UserRating]) => Option[Double]) extends Serializable
   with DoubleFormatter
   with MovieRecommender {
+
+  @transient lazy val log = Logger.getLogger(getClass.getName)
+
   def findRatings(user: User): List[MovieRating] = {
 
     val moviesIdToPredictRatings = user.ratings.map(ratings => ratings.movie.id)
@@ -33,6 +37,10 @@ class CFMoviesRecommender(neighbours: Neighbours,
 
   def forUser(user: String, top: Int = 0): Seq[(Movie, Double)] = {
     val closestNeighbours: Seq[NeighbourInfo] = neighbours.findFor(user)
+    if (closestNeighbours.isEmpty) {
+      log.info("Closest neighbours are empty")
+      return Seq.empty
+    }
     val closestNeighboursIds = closestNeighbours.map(_.neighbourName)
 
     val userAverageRating = neighbours.getUserAverageRating(user)
