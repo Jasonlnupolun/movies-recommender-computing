@@ -29,9 +29,10 @@ class Neighbours(topNeighbours: RDD[(String, Seq[NeighbourInfo])]) extends Seria
 
 object Neighbours {
 
-  def sameUsers: ((User, User)) => Boolean = {s => !s._1.id.equals(s._2.id) }
+  def sameUsers: ((User, User)) => Boolean = { s => !s._1.id.equals(s._2.id) }
 
-  def fromUsers(userRatings: RDD[User]): Neighbours = {
+  def fromUsers(userRatings: RDD[User],
+                weighting: (Double, Int, Int) => Double = PearsonCorrelation.significanceWeighting): Neighbours = {
     val joinedUsers = userRatings.cartesian(userRatings).filter(sameUsers).cache()
 
     val uniqueUsersPairs: RDD[(String, String)] = joinedUsers.map(r => (r._1.id, r._2.id))
@@ -40,7 +41,9 @@ object Neighbours {
 
     val uniqueMappings = uniqueUsersPairs.map((_, None)) // for join with correlations
 
-    val correlations = joinedUsers.map(ratings => ((ratings._1.id, ratings._2.id), PearsonCorrelation.compute(ratings._1.ratings, ratings._2.ratings)))
+    val correlations = joinedUsers.map(ratings => (
+      (ratings._1.id, ratings._2.id),
+      PearsonCorrelation.compute(ratings._1.ratings, ratings._2.ratings, weighting)))
     val uniqueUsersCorrelations = uniqueMappings.join(correlations).map(s => (s._1, s._2._2))
 
     val topNeighbours: RDD[(String, Seq[NeighbourInfo])] = bidirectionalNeighboursMapping(uniqueUsersCorrelations)
