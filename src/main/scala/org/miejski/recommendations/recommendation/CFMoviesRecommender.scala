@@ -1,14 +1,13 @@
 package org.miejski.recommendations.recommendation
 
 import org.apache.log4j.Logger
-import org.apache.spark.rdd.RDD
 import org.miejski.recommendations.evaluation.model.{MovieRating, User}
 import org.miejski.recommendations.model.{Movie, UserRating}
 import org.miejski.recommendations.neighbours.{NeighbourInfo, Neighbours, UserAverageRating}
 import org.miejski.recommendations.parser.DoubleFormatter
 
 class CFMoviesRecommender(neighbours: Neighbours,
-                          moviesRatings: RDD[(Movie, Seq[UserRating])],
+                          moviesRatings: List[(Movie, Seq[UserRating])],
                           predictionMethod: (UserAverageRating, Seq[NeighbourInfo], Seq[UserRating]) => Option[Double]) extends Serializable
   with DoubleFormatter
   with MovieRecommender {
@@ -30,7 +29,6 @@ class CFMoviesRecommender(neighbours: Neighbours,
     val predictedRatings = neighboursRatingsForGivenMovies
       .map(nr => (nr._1, predictionMethod(userAverageRating, closestNeighbours, nr._2)))
       .map(rating => MovieRating(rating._1, rating._2))
-      .collect()
 
     predictedRatings.toList
   }
@@ -47,7 +45,7 @@ class CFMoviesRecommender(neighbours: Neighbours,
 
     val neighboursRatings = moviesRatings.map(mRating => (mRating._1, mRating._2.filter(userRating => closestNeighboursIds.contains(userRating.user))))
     val predictedRatings = neighboursRatings
-      .map(nr => (nr._1, predictionMethod(userAverageRating, closestNeighbours, nr._2))).collect()
+      .map(nr => (nr._1, predictionMethod(userAverageRating, closestNeighbours, nr._2)))
 
     val moviesSortedByPredictedRating = predictedRatings.filter(_._2.isDefined)
       .map(s => (s._1, s._2.get))

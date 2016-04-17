@@ -15,7 +15,7 @@ class MainApp {
 
 object MainApp {
 
-  val interestingUsers = List("1","2","3","4","5")
+  val interestingUsers = List("1", "2", "3", "4", "5")
 
   def main(args: Array[String]) {
     val sparkConfig = new SparkConf().setAppName("UserUserCollaborativeFiltering").setMaster("local[*]").set("spark.driver.memory", "5g")
@@ -33,20 +33,22 @@ object MainApp {
     val allRatings = ratingsDataframe.rdd.map(MovielensRatingsParser.parseRating).cache()
 
     val usersGroupedRatings = allRatings.groupByKey().map(User.fromTuple)
-    val collectedUserRatings = usersGroupedRatings.collect().toSeq.combinations(2).map(x => (x.head, x.tail.head)).toSeq
+    val collectedUserRatings = User.createCombinations(usersGroupedRatings.collect().toSeq)
 
-    val neighboursOnDriver = Neighbours.fromUsersNoRdd(collectedUserRatings)
+    val neighbours = Neighbours.fromUsersNoRdd(collectedUserRatings)
 
-    val neighboursFound = interestingUsers.map(user => (user, Neighbours.findFor(neighboursOnDriver, user, 5)))
+    val neighboursFound = interestingUsers.map(user => (user, Neighbours.findFor(neighbours, user, 5)))
 
     val moviesRatings = allRatings.map(r => (r._2.movie, UserRating(r._1, r._2.rating)))
       .groupByKey()
       .map(s => (s._1, s._2.toSeq)).cache()
 
-    val bestMoviesForUsers = interestingUsers.map(user => (user, new CFMoviesRecommender(neighboursOnDriver, moviesRatings, CFMoviesRecommender.standardPrediction)
+    val collectedMoviesRatings = moviesRatings.collect().toList
+
+    val bestMoviesForUsers = interestingUsers.map(user => (user, new CFMoviesRecommender(neighbours, collectedMoviesRatings, CFMoviesRecommender.standardPrediction)
       .forUser(user, top = 3)))
 
-    val bestNormalizedMoviesForUsers = interestingUsers.map(user => (user, new CFMoviesRecommender(neighboursOnDriver, moviesRatings, CFMoviesRecommender.averageNormalizedPrediction)
+    val bestNormalizedMoviesForUsers = interestingUsers.map(user => (user, new CFMoviesRecommender(neighbours, collectedMoviesRatings, CFMoviesRecommender.averageNormalizedPrediction)
       .forUser(user, top = 3)))
 
     val users = moviesRatings.flatMap(mR => mR._2.map(r => (r.user, MovieRating(mR._1, r.rating))))
@@ -56,7 +58,7 @@ object MainApp {
 
     val error = new RecommenderEvaluator().evaluateRecommender(users,
       (dataSplitter) => new CrossValidationPartitioner().allCombinations(dataSplitter),
-      (n, mRatings) => new CFMoviesRecommender(neighboursOnDriver, moviesRatings, CFMoviesRecommender.averageNormalizedPrediction))
+      (n, mRatings) => new CFMoviesRecommender(neighbours, collectedMoviesRatings, CFMoviesRecommender.averageNormalizedPrediction))
 
     println(s"Final error : $error")
     println("Finished")

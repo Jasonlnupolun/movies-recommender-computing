@@ -12,4 +12,8 @@ object User {
     User(tuple._1, tuple._2.toList)
   }
 
+
+  def createCombinations(users: Seq[User]) = {
+    users.combinations(2).map(x => (x.head, x.tail.head)).toSeq
+  }
 }
