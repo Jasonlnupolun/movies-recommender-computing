@@ -19,10 +19,10 @@ class CFMoviesRecommender(neighbours: Neighbours,
 
     val moviesIdToPredictRatings = user.ratings.map(ratings => ratings.movie.id)
 
-    val closestNeighbours: Seq[NeighbourInfo] = neighbours.findFor(user.id)
+    val closestNeighbours: Seq[NeighbourInfo] = Neighbours.findFor(neighbours, user.id)
     val closestNeighboursIds = closestNeighbours.map(_.neighbourName)
 
-    val userAverageRating = neighbours.getUserAverageRating(user.id)
+    val userAverageRating = Neighbours.getUserAverageRating(neighbours, user.id)
 
     val neighboursRatingsForGivenMovies = moviesRatings.filter(movieRating => moviesIdToPredictRatings.contains(movieRating._1.id))
       .map(mRating => (mRating._1, mRating._2.filter(userRating => closestNeighboursIds.contains(userRating.user))))
@@ -36,14 +36,14 @@ class CFMoviesRecommender(neighbours: Neighbours,
   }
 
   def forUser(user: String, top: Int = 0): Seq[(Movie, Double)] = {
-    val closestNeighbours: Seq[NeighbourInfo] = neighbours.findFor(user)
+    val closestNeighbours: Seq[NeighbourInfo] = Neighbours.findFor(neighbours,user)
     if (closestNeighbours.isEmpty) {
       log.info("Closest neighbours are empty")
       return Seq.empty
     }
     val closestNeighboursIds = closestNeighbours.map(_.neighbourName)
 
-    val userAverageRating = neighbours.getUserAverageRating(user)
+    val userAverageRating = Neighbours.getUserAverageRating(neighbours, user)
 
     val neighboursRatings = moviesRatings.map(mRating => (mRating._1, mRating._2.filter(userRating => closestNeighboursIds.contains(userRating.user))))
     val predictedRatings = neighboursRatings

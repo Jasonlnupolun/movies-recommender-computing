@@ -4,8 +4,7 @@ import org.miejski.recommendations.model.Movie
 
 case class MovieRating(movie: Movie, rating: Option[Double], timestamp: Long = -1)
 
-case class User(id: String, ratings: List[MovieRating])
-
+case class User(id: String, ratings: List[MovieRating]) extends Serializable
 
 object User {
 
