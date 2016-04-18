@@ -1,5 +1,7 @@
 package org.miejski.recommendations.evaluation
 
+import java.time.{Instant, LocalDateTime, ZoneId}
+
 import org.miejski.recommendations.SparkSuite
 import org.miejski.recommendations.evaluation.model.{MovieRating, User}
 import org.miejski.recommendations.model.Movie
@@ -11,8 +13,15 @@ import scala.util.Random
 class CrossValidationPartitionerTest extends SparkSuite {
 
   def generateRatings(movies: IndexedSeq[Movie]): List[MovieRating] = movies
-    .map(m => MovieRating(m, Option.apply(Random.nextDouble())))
+    .map(m => MovieRating(m, Option.apply(Random.nextDouble()), generateTimestamp()))
     .toList
+
+  def generateTimestamp(): Long = {
+    val now: Long = System.currentTimeMillis()
+    val nowDate = LocalDateTime.from(Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault()))
+    val from = nowDate.minusYears(1).atZone(ZoneId.systemDefault()).toInstant.toEpochMilli
+    from + (new Random().nextDouble() * (now - from)).toLong
+  }
 
   test("partitioning data equally") {
     val k = 5

@@ -6,6 +6,10 @@ import org.miejski.recommendations.evaluation.model.User
 class CrossValidationPartitioner {
 
   def allCombinations(usersRatings: RDD[User], k: Int = 5): List[ValidationDataSplit] = {
+    val users = usersRatings.collect().toList
+
+    val usersCount = users.size/ 5
+
     val weights = List.fill(k)(1.0 / k)
     val partitions = usersRatings.randomSplit(weights.toArray, 1).toList
 
