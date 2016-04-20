@@ -40,7 +40,7 @@ object MainApp {
 
     val neighbours = Neighbours.fromUsers(collectedUserRatings)
 
-    val neighboursFound = interestingUsers.map(user => (user, Neighbours.findFor(neighbours, user, 5)))
+    val neighboursFound = interestingUsers.map(user => (user, neighbours.findFor(user, 5)))
 
     val moviesRatings = allRatings.map(r => (r._2.movie, UserRating(r._1, r._2.rating)))
       .groupByKey()

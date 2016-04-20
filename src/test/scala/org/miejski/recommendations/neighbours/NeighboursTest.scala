@@ -25,7 +25,7 @@ class NeighboursTest extends FunSuite with Matchers
     val neighbours = Neighbours.fromUsers(users, noWeightingFunction)
 
     //then
-    val neighboursInfo = Neighbours.findFor(neighbours, "3")
+    val neighboursInfo = neighbours.findFor("3")
     neighboursInfo should contain allOf(
       NeighbourInfo("4", 1.0, 4.0, 4.0),
       NeighbourInfo("2", 1.0, 4.0, 4.0),
@@ -33,23 +33,49 @@ class NeighboursTest extends FunSuite with Matchers
   }
 
   test("should return good neighbours for given user") {
-    val neighbours = new Neighbours(Map(
+    val neighboursMap: Map[String, Seq[NeighbourInfo]] = Map(
       ("1", Seq(NeighbourInfo("3", 3.0, 3.0, 2.0),
         NeighbourInfo("4", 2.0, 2.0, 2.0),
         NeighbourInfo("5", 1.0, 1.0, 2.0))),
       ("2", Seq(NeighbourInfo("3", 3.0, 2.0, 3.5),
         NeighbourInfo("4", 4.0, 5.0, 3.0),
-        NeighbourInfo("5", 2.0, 4.0, 3.0)))))
+        NeighbourInfo("5", 2.0, 4.0, 3.0))))
+    val neighbours = new Neighbours(neighboursMap, Neighbours.usersAverageRating(neighboursMap))
 
 
-    Neighbours.findFor(neighbours, "1") should equal(Seq(NeighbourInfo("3", 3.0, 3.0, 2.0),
+    neighbours.findFor("1") should equal(Seq(NeighbourInfo("3", 3.0, 3.0, 2.0),
       NeighbourInfo("4", 2.0, 2.0, 2.0),
       NeighbourInfo("5", 1.0, 1.0, 2.0)))
-    Neighbours.findFor(neighbours,"2") should equal(Seq(NeighbourInfo("4", 4.0, 5.0, 3.0),
+    neighbours.findFor("2") should equal(Seq(NeighbourInfo("4", 4.0, 5.0, 3.0),
       NeighbourInfo("3", 3.0, 2.0, 3.5),
       NeighbourInfo("5", 2.0, 4.0, 3.0)))
 
-    Neighbours.findFor(neighbours,"2", 2) should equal(Seq(NeighbourInfo("4", 4.0, 5.0, 3.0),
+    neighbours.findFor("2", 2) should equal(Seq(NeighbourInfo("4", 4.0, 5.0, 3.0),
       NeighbourInfo("3", 3.0, 2.0, 3.5)))
   }
+
+  test("should create user average ratings map") {
+    val neighboursMap = Map(
+      ("1", Seq(
+        NeighbourInfo("2", 1.5, 1.5, 4.0),
+        NeighbourInfo("3", 3.0, 3.0, 2.0),
+        NeighbourInfo("4", 2.0, 2.0, 2.0),
+        NeighbourInfo("5", 1.0, 1.0, 3.5))),
+      ("2", Seq(
+        NeighbourInfo("1", 2.0, 2.0, 2.3),
+        NeighbourInfo("3", 3.0, 2.0, 2.0),
+        NeighbourInfo("4", 4.0, 5.0, 2.0),
+        NeighbourInfo("5", 2.0, 4.0, 3.5))))
+
+
+    val usersAverageRatings = Neighbours.usersAverageRating(neighboursMap).toList
+
+    usersAverageRatings should contain allOf(
+      ("1", UserAverageRating("1", 2.3)),
+      ("2", UserAverageRating("2", 4.0)),
+      ("3", UserAverageRating("3", 2.0)),
+      ("4", UserAverageRating("4", 2.0)),
+      ("5", UserAverageRating("5", 3.5)))
+  }
+
 }
