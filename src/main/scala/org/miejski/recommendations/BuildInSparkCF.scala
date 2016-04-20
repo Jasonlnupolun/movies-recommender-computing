@@ -5,6 +5,9 @@ import java.io.File
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.recommendation.{ALS, MatrixFactorizationModel, Rating}
 import org.apache.spark.rdd._
+import org.miejski.recommendations.evaluation.CrossValidationPartitioner
+import org.miejski.recommendations.evaluation.model.{MovieRating, User}
+import org.miejski.recommendations.model.Movie
 
 object BuildInSparkCF {
 
@@ -14,41 +17,37 @@ object BuildInSparkCF {
       .setAppName("MovieLensBuiltInCF")
       .set("spark.executor.memory", "2g")
       .set("spark.driver.memory", "6g")
+      .set("ALS.checkpointingInterval", "2")
       .setMaster("local[*]")
     val sc = new SparkContext(conf)
 
+    sc.setCheckpointDir("checkpoint/")
     val ratings = sc.textFile(new File("src/main/resources/u.data_no_header").toString).map { line =>
       val fields = line.split(",")
       (fields(3).toLong % 10, Rating(fields(0).toInt, fields(1).toInt, fields(2).toDouble))
     }
 
+    val users = ratings.map(rating => (rating._2.user, rating._2, rating._1))
+      .groupBy(s => s._1)
+      .map(gR => User(gR._1.toString, gR._2.map(x => MovieRating(Movie(x._2.product.toString, x._2.product.toString), Option.apply(x._2.rating), x._3)).toList))
 
-    ratings.collect()
+    val validationDataSplits = new CrossValidationPartitioner().allCombinationsTimestampBased(users)
+    val sparkDatasets = validationDataSplits.map(vds => (vds.trainingData.flatMap(_.toMLibRatings()), vds.testData.flatMap(_.toMLibRatings())))
+
     val movies = sc.textFile(new File("src/main/resources/u.item").toString).map { line =>
       val fields = line.split("\\|")
       (fields(0).toInt, fields(1))
     }.collect().toMap
 
-    val numPartitions = 4
-    val training = ratings.filter(x => x._1 < 6)
-      .values
-      .repartition(numPartitions)
-      .cache()
-    val validation = ratings.filter(x => x._1 >= 6 && x._1 < 8)
-      .values
-      .repartition(numPartitions)
-      .cache()
-    val test = ratings.filter(x => x._1 >= 8).values.cache()
+    val training = sparkDatasets.apply(0)._1
+    val test = sparkDatasets.apply(0)._1
 
-    val numTraining = training.count()
-    val numValidation = validation.count()
     val numTest = test.count()
+    val numTraining = training.count()
 
-    println("Training: " + numTraining + ", validation: " + numValidation + ", test: " + numTest)
-
-    val ranks = List( 4, 8, 12)
-    val lambdas = List(0.01, 0.1,  1.0)
-    val numIters = List(20, 30)
+    val ranks = List(12)
+    val lambdas = List(0.01)
+    val numIters = List(30)
     var bestModel: Option[MatrixFactorizationModel] = None
     var bestValidationRmse = Double.MaxValue
     var bestRank = 0
@@ -56,7 +55,7 @@ object BuildInSparkCF {
     var bestNumIter = -1
     for (rank <- ranks; lambda <- lambdas; numIter <- numIters) {
       val model = ALS.train(training, rank, numIter, lambda)
-      val validationRmse = computeRmse(model, validation, numValidation)
+      val validationRmse = computeRmse(model, test, numTest)
       println("RMSE (validation) = " + validationRmse + " for the model trained with rank = "
         + rank + ", lambda = " + lambda + ", and numIter = " + numIter + ".")
       if (validationRmse < bestValidationRmse) {

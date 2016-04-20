@@ -1,6 +1,5 @@
 package org.miejski.recommendations.neighbours
 
-import org.apache.spark.rdd.RDD
 import org.miejski.recommendations.correlation.{NeighboursDetails, PearsonCorrelation}
 import org.miejski.recommendations.evaluation.model.User
 
@@ -31,14 +30,14 @@ object Neighbours {
 
   def sameUsers: ((User, User)) => Boolean = { s => !s._1.id.equals(s._2.id) }
 
-  def fromUsersNoRdd(userRatings: Seq[(User, User)],
-                     weighting: (Double, Int, Int) => Double = PearsonCorrelation.significanceWeighting): Neighbours = {
-    val a = userRatings.map(x => ((x._1.id, x._2.id), PearsonCorrelation.compute(x._1.ratings, x._2.ratings, weighting)))
-    val topNeighboursMap = bidirectionalNeighboursMappingNoRdd(a)
+  def fromUsers(userRatings: Seq[(User, User)],
+                weighting: (Double, Int, Int) => Double = PearsonCorrelation.significanceWeighting): Neighbours = {
+    val userPairNeighbourDetails = userRatings.map(x => ((x._1.id, x._2.id), PearsonCorrelation.compute(x._1.ratings, x._2.ratings, weighting)))
+    val topNeighboursMap = bidirectionalNeighboursMapping(userPairNeighbourDetails)
     new Neighbours(topNeighboursMap)
   }
 
-  def bidirectionalNeighboursMappingNoRdd(uniqueUsersCorrelations: Seq[((String, String), NeighboursDetails)]): Map[String, Seq[NeighbourInfo]] = {
+  def bidirectionalNeighboursMapping(uniqueUsersCorrelations: Seq[((String, String), NeighboursDetails)]): Map[String, Seq[NeighbourInfo]] = {
     val map = uniqueUsersCorrelations.filter(c => !c._1._1.equals(c._1._2))
       .flatMap(corr => Seq(
         (corr._1._1, NeighbourInfo(corr._1._2, corr._2.similarity, corr._2.user2SharedAverageRating, corr._2.user2AverageRating)),
@@ -46,17 +45,6 @@ object Neighbours {
 
     val r = map.groupBy(_._1).mapValues(s => s.map(x => x._2).sortBy(singleCorr => singleCorr.similarity).reverse)
     r
-  }
-
-  def bidirectionalNeighboursMapping(uniqueUsersCorrelations: RDD[((String, String), NeighboursDetails)]): RDD[(String, Seq[NeighbourInfo])] = {
-    val map: RDD[(String, NeighbourInfo)] = uniqueUsersCorrelations.filter(c => !c._1._1.equals(c._1._2))
-      .flatMap(corr => Seq(
-        (corr._1._1, NeighbourInfo(corr._1._2, corr._2.similarity, corr._2.user2SharedAverageRating, corr._2.user2AverageRating)),
-        (corr._1._2, NeighbourInfo(corr._1._1, corr._2.similarity, corr._2.user1SharedAverageRating, corr._2.user1AverageRating))))
-    val topNeighbours = map
-      .groupByKey()
-      .map(s => (s._1, s._2.toSeq.sortBy(singleCorr => singleCorr.similarity).reverse))
-    topNeighbours
   }
 }
 

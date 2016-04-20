@@ -32,11 +32,11 @@ class RecommenderEvaluator extends Serializable {
     })
 
     val realTestUsers = furtherTestDataSplit.map(_._2)
-    val realTrainingUsers = furtherTestDataSplit.map(_._1).union(crossValidation.trainingData.reduce(_ union _))
+    val realTrainingUsers = furtherTestDataSplit.map(_._1).union(crossValidation.trainingData)
 
     val moviesRatings = realTrainingUsers.flatMap(s => s.ratings.map(rating => (rating.movie, UserRating(s.id, rating.rating))))
       .groupByKey().map(s => (s._1, s._2.toSeq))
-    val neighbours: Neighbours = Neighbours.fromUsersNoRdd(User.createCombinations(realTrainingUsers.collect().toSeq))
+    val neighbours: Neighbours = Neighbours.fromUsers(User.createCombinations(realTrainingUsers.collect().toSeq))
 
     val recommender = recommenderCreator(neighbours, moviesRatings)
 

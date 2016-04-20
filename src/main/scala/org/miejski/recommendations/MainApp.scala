@@ -1,5 +1,7 @@
 package org.miejski.recommendations
 
+import java.time.{Duration, LocalDateTime}
+
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.miejski.recommendations.evaluation.{RecommenderEvaluator, CrossValidationPartitioner}
@@ -19,6 +21,7 @@ object MainApp {
 
   def main(args: Array[String]) {
     val sparkConfig = new SparkConf().setAppName("UserUserCollaborativeFiltering").setMaster("local[*]").set("spark.driver.memory", "5g")
+    val start = LocalDateTime.now()
     sparkConfig.getAll.foreach(println)
     val sc = SparkContext.getOrCreate(sparkConfig)
 
@@ -35,7 +38,7 @@ object MainApp {
     val usersGroupedRatings = allRatings.groupByKey().map(User.fromTuple)
     val collectedUserRatings = User.createCombinations(usersGroupedRatings.collect().toSeq)
 
-    val neighbours = Neighbours.fromUsersNoRdd(collectedUserRatings)
+    val neighbours = Neighbours.fromUsers(collectedUserRatings)
 
     val neighboursFound = interestingUsers.map(user => (user, Neighbours.findFor(neighbours, user, 5)))
 
@@ -57,10 +60,14 @@ object MainApp {
       .map(s => User(s._1, s._2.toList))
 
     val error = new RecommenderEvaluator().evaluateRecommender(users,
-      (dataSplitter) => new CrossValidationPartitioner().allCombinations(dataSplitter),
+      (dataSplitter) => new CrossValidationPartitioner().allCombinationsTimestampBased(dataSplitter),
       (n, mRatings) => new CFMoviesRecommender(neighbours, collectedMoviesRatings, CFMoviesRecommender.averageNormalizedPrediction))
 
     println(s"Final error : $error")
+    val end = LocalDateTime.now()
+
+    println(Duration.between(start, end))
+
     println("Finished")
   }
 

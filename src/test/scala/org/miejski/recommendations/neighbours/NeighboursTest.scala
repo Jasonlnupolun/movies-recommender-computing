@@ -22,7 +22,7 @@ class NeighboursTest extends FunSuite with Matchers
       .combinations(2).map(x => (x.head, x.tail.head)).toSeq
 
     //when
-    val neighbours = Neighbours.fromUsersNoRdd(users, noWeightingFunction)
+    val neighbours = Neighbours.fromUsers(users, noWeightingFunction)
 
     //then
     val neighboursInfo = Neighbours.findFor(neighbours, "3")
