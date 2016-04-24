@@ -1,6 +1,8 @@
+package org.miejski.recommendations
+
 import org.apache.spark.{SparkConf, SparkContext}
 import org.miejski.recommendations.evaluation.partitioning.CrossValidationPartitioner
-import org.miejski.recommendations.{MatrixFactorizationRecommender, ModelEvaluatorRunner}
+import org.miejski.recommendations.recommendation.MatrixFactorizationRecommender
 
 object SparkMatrixFactorization {
 

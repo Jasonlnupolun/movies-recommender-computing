@@ -1,6 +1,7 @@
+package org.miejski.recommendations
+
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
-import org.miejski.recommendations.ModelEvaluatorRunner
 import org.miejski.recommendations.evaluation.model.User
 import org.miejski.recommendations.evaluation.partitioning.CrossValidationPartitioner
 import org.miejski.recommendations.model.UserRating

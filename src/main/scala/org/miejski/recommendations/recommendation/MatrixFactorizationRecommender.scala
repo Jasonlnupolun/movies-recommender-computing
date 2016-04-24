@@ -1,11 +1,10 @@
-package org.miejski.recommendations
+package org.miejski.recommendations.recommendation
 
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.recommendation.{ALS, MatrixFactorizationModel, Rating}
 import org.apache.spark.rdd.RDD
 import org.miejski.recommendations.evaluation.model.MovieRating
 import org.miejski.recommendations.model.{Movie, UserRating}
-import org.miejski.recommendations.recommendation.MovieRecommender
 
 class MatrixFactorizationRecommender(model: MatrixFactorizationModel, sc: SparkContext) extends MovieRecommender {
 
