@@ -12,7 +12,7 @@ class CFMoviesRecommenderTest extends FunSuite
   test("predicting users rating when only single user matters") {
     // coursera-dataset user = 3712 neighbours
     val neighbours = Seq(("2824", 0.46291), ("3867", 0.400275), ("5062", 0.247693), ("442", 0.22713), ("3853", 0.19366))
-      .map(s => NeighbourInfo(s._1, s._2, Random.nextDouble() * 5.0, Random.nextDouble() * 5.0))
+      .map(s => NeighbourInfo(s._1, s._2, Random.nextDouble() * 5.0, Random.nextDouble() * 5.0)).toSet
     val neighboursRatings = Seq(UserRating("2824", Option.empty),
       UserRating("3867", Option.empty),
       UserRating("5062", Option.empty),
@@ -27,7 +27,7 @@ class CFMoviesRecommenderTest extends FunSuite
 
   test("should return proper value when all users matters") {
     val neighbours = Seq(("1", 0.5), ("2", 1.0), ("3", 0.5), ("4", 0.5))
-      .map(s => NeighbourInfo(s._1, s._2, Random.nextDouble() * 5.0, Random.nextDouble() * 5.0))
+      .map(s => NeighbourInfo(s._1, s._2, Random.nextDouble() * 5.0, Random.nextDouble() * 5.0)).toSet
     val neighboursRatings = Seq(
       UserRating("1", Option(3.0)),
       UserRating("2", Option(4.0)),
