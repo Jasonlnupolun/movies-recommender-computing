@@ -1,6 +1,6 @@
-import org.apache.spark.{SparkContext, SparkConf}
+import org.apache.spark.{SparkConf, SparkContext}
+import org.miejski.recommendations.evaluation.partitioning.CrossValidationPartitioner
 import org.miejski.recommendations.{MatrixFactorizationRecommender, ModelEvaluatorRunner}
-import org.miejski.recommendations.evaluation.CrossValidationPartitioner
 
 object SparkMatrixFactorization {
 
@@ -18,7 +18,7 @@ object SparkMatrixFactorization {
 
     new ModelEvaluatorRunner().runSimulation(
       sc,
-      (dataSplitter) => new CrossValidationPartitioner().allCombinationsTimestampBased(dataSplitter),
+      new CrossValidationPartitioner,
       (neighbours, ratings) => MatrixFactorizationRecommender(ratings))
 
     sc.stop()

@@ -1,10 +1,10 @@
-package org.miejski.recommendations.evaluation
+package org.miejski.recommendations.evaluation.partitioning
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.miejski.recommendations.evaluation.model.{MovieRating, User}
 
-class CrossValidationPartitioner {
+class CrossValidationPartitioner extends Partitioner {
 
   def allCombinations(usersRatings: RDD[User], k: Int = 5): List[ValidationDataSplit] = {
     val users = usersRatings.collect().toList
@@ -30,7 +30,7 @@ class CrossValidationPartitioner {
       .unzip
   }
 
-  def allCombinationsTimestampBased(usersRatings: RDD[User], k: Int = 5): List[ValidationDataSplit] = {
+  def splitData(usersRatings: RDD[User], k: Int = 5, testDataRatio: Double = 0.2): List[ValidationDataSplit] = {
     val sc: SparkContext = usersRatings.sparkContext
     val groupedPartitions: List[List[User]] = splitUsersIntoFolds(usersRatings.collect(), k)
 
@@ -38,7 +38,7 @@ class CrossValidationPartitioner {
       val testUsersSet = groupedPartitions.apply(i)
       val basicTrainingSet = groupedPartitions.zipWithIndex.filter(_._2 != i).flatMap(_._1)
 
-      val (additionalTrainingSet, finalTestSet) = splitByTime(testUsersSet)
+      val (additionalTrainingSet, finalTestSet) = splitByTime(testUsersSet, 1 - testDataRatio)
 
       ValidationDataSplit(sc.parallelize(finalTestSet), sc.parallelize(basicTrainingSet ::: additionalTrainingSet))
     }
@@ -54,4 +54,3 @@ class CrossValidationPartitioner {
   }
 }
 
-case class ValidationDataSplit(testData: RDD[User], trainingData: RDD[User])

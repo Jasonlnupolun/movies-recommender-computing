@@ -1,8 +1,8 @@
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.miejski.recommendations.ModelEvaluatorRunner
-import org.miejski.recommendations.evaluation.CrossValidationPartitioner
 import org.miejski.recommendations.evaluation.model.User
+import org.miejski.recommendations.evaluation.partitioning.CrossValidationPartitioner
 import org.miejski.recommendations.model.UserRating
 import org.miejski.recommendations.parser.movielens.MovielensRatingsParser
 import org.miejski.recommendations.recommendation.CFMoviesRecommender
@@ -39,7 +39,7 @@ object CustomCollaborativeFiltering {
 
     new ModelEvaluatorRunner().runSimulation(
       sc,
-      (dataSplitter) => new CrossValidationPartitioner().allCombinationsTimestampBased(dataSplitter),
+      new CrossValidationPartitioner,
       (neighbours, mRatings) => new CFMoviesRecommender(neighbours, toSeq.toList, collectedMoviesRatings, CFMoviesRecommender.averageNormalizedPrediction))
 
     sc.stop()

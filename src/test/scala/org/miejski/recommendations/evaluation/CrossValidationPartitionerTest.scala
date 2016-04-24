@@ -4,6 +4,7 @@ import java.time.{Instant, LocalDateTime, ZoneId}
 
 import org.miejski.recommendations.SparkSuite
 import org.miejski.recommendations.evaluation.model.{MovieRating, User}
+import org.miejski.recommendations.evaluation.partitioning.CrossValidationPartitioner
 import org.miejski.recommendations.model.Movie
 
 import scala.collection.immutable.IndexedSeq

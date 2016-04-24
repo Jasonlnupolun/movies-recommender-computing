@@ -2,6 +2,7 @@ package org.miejski.recommendations.evaluation
 
 import org.apache.spark.rdd.RDD
 import org.miejski.recommendations.evaluation.model.{MovieRating, User}
+import org.miejski.recommendations.evaluation.partitioning.{Partitioner, ValidationDataSplit}
 import org.miejski.recommendations.model.{Movie, UserRating}
 import org.miejski.recommendations.neighbours.Neighbours
 import org.miejski.recommendations.recommendation.MovieRecommender
@@ -9,9 +10,9 @@ import org.miejski.recommendations.recommendation.MovieRecommender
 class RecommenderEvaluator extends Serializable {
 
   def evaluateRecommender(usersRatings: RDD[User],
-                          dataSplitter: (RDD[User]) => List[ValidationDataSplit],
+                          dataSplitter: Partitioner,
                           recommenderCreator: (Neighbours, RDD[(Movie, Seq[UserRating])]) => MovieRecommender) = {
-    val validationDataSplit = dataSplitter(usersRatings)
+    val validationDataSplit = dataSplitter.splitData(usersRatings)
     val foldsErrors = validationDataSplit.map(dataSplit => foldError(dataSplit, recommenderCreator))
     val error = foldsErrors.sum / foldsErrors.length
     println(s"Evaluator final error : $error")

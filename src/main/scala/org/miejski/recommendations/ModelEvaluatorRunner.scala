@@ -6,8 +6,9 @@ import java.time.{Duration, LocalDateTime}
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.recommendation.Rating
 import org.apache.spark.rdd.RDD
+import org.miejski.recommendations.evaluation.RecommenderEvaluator
 import org.miejski.recommendations.evaluation.model.{MovieRating, User}
-import org.miejski.recommendations.evaluation.{RecommenderEvaluator, ValidationDataSplit}
+import org.miejski.recommendations.evaluation.partitioning.Partitioner
 import org.miejski.recommendations.model.{Movie, UserRating}
 import org.miejski.recommendations.neighbours.Neighbours
 import org.miejski.recommendations.recommendation.MovieRecommender
@@ -15,7 +16,7 @@ import org.miejski.recommendations.recommendation.MovieRecommender
 class ModelEvaluatorRunner {
 
   def runSimulation(sc: SparkContext,
-                    dataSplitter: (RDD[User]) => List[ValidationDataSplit],
+                    dataSplitter: Partitioner,
                     recommenderCreator: (Neighbours, RDD[(Movie, Seq[UserRating])]) => MovieRecommender) = {
 
     val users: RDD[User] = readUsersRatings(sc)
