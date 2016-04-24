@@ -32,6 +32,34 @@ class CrossValidationPartitionerTest extends SparkSuite {
     val partitionings = new CrossValidationPartitioner().allCombinations(usersRatingsRdd, k)
 
     partitionings should have length k
-//    partitionings.foreach(p => p.trainingData.cou should have length (k - 1))
   }
+
+
+  test("should split users into proper folds") {
+    val k: Int = 5
+    val movies = (100 to 105).map(_.toString).map(movie => new Movie(movie, movie))
+    val usersRatings = (1 to 1000).map(id => new User(id.toString, generateRatings(movies)))
+
+    val usersPartitions = new CrossValidationPartitioner().splitUsersIntoFolds(usersRatings, k)
+    usersPartitions should have length k
+    usersPartitions.map(_.size) shouldEqual List(200, 200, 200, 200, 200)
+  }
+
+  test("should split users ratings by time") {
+    val k: Int = 5
+    val movies = (101 to 110).map(_.toString).map(movie => new Movie(movie, movie))
+    val splitRatio = 0.8
+    val moviesCount = movies.size
+    val usersRatings = (1 to 1000).map(id => new User(id.toString, generateRatings(movies))).toList
+    val usersCount = usersRatings.size
+
+    val (train, test) = new CrossValidationPartitioner().splitByTime(usersRatings, splitRatio)
+
+    train.size shouldEqual usersCount
+    test.size shouldEqual usersCount
+
+    train.map(_.ratings.size) shouldEqual List.fill(usersCount)(moviesCount * splitRatio)
+    test.map(_.ratings.size) shouldEqual List.fill(usersCount)((moviesCount * (1 - splitRatio)).round)
+  }
+
 }

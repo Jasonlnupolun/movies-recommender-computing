@@ -24,9 +24,6 @@ class CrossValidationPartitioner {
     def getRatingsSplitPosition(ratings: List[MovieRating]): Int = {
       (trainingProportion * ratings.size).toInt
     }
-    def joinSameSetType: ((List[MovieRating], List[MovieRating]), (List[MovieRating], List[MovieRating])) => (List[MovieRating], List[MovieRating]) = {
-      (t1, t2) => (t1._1 ::: t2._1, t1._2 ::: t2._2)
-    }
     testUsersSet.map(_.withTimeOrderedRatings())
       .map(user => (user.id, user.ratings.splitAt(getRatingsSplitPosition(user.ratings))))
       .map(user => (User(user._1, user._2._1), User(user._1, user._2._2))) // single user training and test ratings
@@ -35,9 +32,7 @@ class CrossValidationPartitioner {
 
   def allCombinationsTimestampBased(usersRatings: RDD[User], k: Int = 5): List[ValidationDataSplit] = {
     val sc: SparkContext = usersRatings.sparkContext
-    val users = usersRatings.collect().toList
-    val usersCountPerBlock = users.size / k
-    val groupedPartitions = users.grouped(usersCountPerBlock).toList
+    val groupedPartitions: List[List[User]] = splitUsersIntoFolds(usersRatings.collect(), k)
 
     val validationExamples = for (i <- 0 to k) yield {
       val testUsersSet = groupedPartitions.apply(i)
@@ -49,6 +44,13 @@ class CrossValidationPartitioner {
     }
 
     validationExamples.toList
+  }
+
+  def splitUsersIntoFolds(usersRatings: Seq[User], k: Int): List[List[User]] = {
+    val users = usersRatings.toList
+    val usersCountPerBlock = users.size / k
+    val groupedPartitions = users.grouped(usersCountPerBlock).toList
+    groupedPartitions
   }
 }
 

@@ -54,5 +54,4 @@ case class NeighbourInfo(neighbourName: String,
                          neighbourSharedAverageRating: Double,
                          neighbourAverageRating: Double) extends Serializable
 
-case class
-UserAverageRating(user: String, averageRating: Double)
+case class UserAverageRating(user: String, averageRating: Double)
