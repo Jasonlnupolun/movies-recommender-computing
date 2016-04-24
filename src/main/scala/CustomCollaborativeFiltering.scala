@@ -1,25 +1,23 @@
-package org.miejski.recommendations
-
-import java.time.{Duration, LocalDateTime}
-
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
-import org.miejski.recommendations.evaluation.{RecommenderEvaluator, CrossValidationPartitioner}
-import org.miejski.recommendations.evaluation.model.{MovieRating, User}
+import org.miejski.recommendations.ModelEvaluatorRunner
+import org.miejski.recommendations.evaluation.CrossValidationPartitioner
+import org.miejski.recommendations.evaluation.model.User
 import org.miejski.recommendations.model.UserRating
-import org.miejski.recommendations.neighbours.Neighbours
 import org.miejski.recommendations.parser.movielens.MovielensRatingsParser
 import org.miejski.recommendations.recommendation.CFMoviesRecommender
 
-object MainApp {
-
-  val interestingUsers = List("1", "2", "3", "4", "5")
-
+object CustomCollaborativeFiltering {
   def main(args: Array[String]) {
-    val sparkConfig = new SparkConf().setAppName("UserUserCollaborativeFiltering").setMaster("local[*]").set("spark.driver.memory", "5g")
-    val start = LocalDateTime.now()
-    sparkConfig.getAll.foreach(println)
-    val sc = SparkContext.getOrCreate(sparkConfig)
+    val conf = new SparkConf()
+      .setAppName("MovieLensBuiltInCF")
+      .set("spark.executor.memory", "2g")
+      .set("spark.driver.memory", "6g")
+      .set("ALS.checkpointingInterval", "2")
+      .setMaster("local[*]")
+    val sc = new SparkContext(conf)
+
+    sc.setCheckpointDir("checkpoint/")
 
     val sqlContext = new SQLContext(sc)
     sqlContext.getAllConfs.foreach(println)
@@ -30,14 +28,8 @@ object MainApp {
       .load("src/main/resources/u.data")
 
     val allRatings = ratingsDataframe.rdd.map(MovielensRatingsParser.parseRating).cache()
-
     val usersGroupedRatings = allRatings.groupByKey().map(User.fromTuple)
     val toSeq: Seq[User] = usersGroupedRatings.collect().toSeq
-    val collectedUserRatings = User.createCombinations(toSeq)
-
-    val neighbours = Neighbours.fromUsers(collectedUserRatings)
-
-    val neighboursFound = interestingUsers.map(user => (user, neighbours.findFor(user, 5)))
 
     val moviesRatings = allRatings.map(r => (r._2.movie, UserRating(r._1, r._2.rating)))
       .groupByKey()
@@ -45,23 +37,11 @@ object MainApp {
 
     val collectedMoviesRatings = moviesRatings.collect().toList
 
-    val users = moviesRatings.flatMap(mR => mR._2.map(r => (r.user, MovieRating(mR._1, r.rating))))
-      .filter(_._2.rating.nonEmpty)
-      .groupByKey()
-      .map(s => User(s._1, s._2.toList))
-
-    val error = new RecommenderEvaluator().evaluateRecommender(users,
+    new ModelEvaluatorRunner().runSimulation(
+      sc,
       (dataSplitter) => new CrossValidationPartitioner().allCombinationsTimestampBased(dataSplitter),
       (neighbours, mRatings) => new CFMoviesRecommender(neighbours, toSeq.toList, collectedMoviesRatings, CFMoviesRecommender.averageNormalizedPrediction))
 
-    println(s"Final error : $error")
-    val end = LocalDateTime.now()
-
-    println(Duration.between(start, end))
-
-    println("Finished")
     sc.stop()
   }
-
 }
-
