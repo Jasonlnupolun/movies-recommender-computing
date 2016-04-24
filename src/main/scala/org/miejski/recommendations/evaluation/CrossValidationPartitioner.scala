@@ -45,11 +45,10 @@ class CrossValidationPartitioner {
 
       val (additionalTrainingSet, finalTestSet) = splitByTime(testUsersSet)
 
-      ValidationDataSplit(sc.parallelize(basicTrainingSet ::: additionalTrainingSet), sc.parallelize(finalTestSet))
+      ValidationDataSplit(sc.parallelize(finalTestSet), sc.parallelize(basicTrainingSet ::: additionalTrainingSet))
     }
 
     validationExamples.toList
-    //    ValidationDataSplit(iP._1, indexedPartitions.filter(p => !p._2.equals(iP._2)).map(_._1).reduce(_ union _))
   }
 }
 

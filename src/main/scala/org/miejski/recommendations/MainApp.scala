@@ -11,10 +11,6 @@ import org.miejski.recommendations.neighbours.Neighbours
 import org.miejski.recommendations.parser.movielens.MovielensRatingsParser
 import org.miejski.recommendations.recommendation.CFMoviesRecommender
 
-class MainApp {
-
-}
-
 object MainApp {
 
   val interestingUsers = List("1", "2", "3", "4", "5")
@@ -36,7 +32,8 @@ object MainApp {
     val allRatings = ratingsDataframe.rdd.map(MovielensRatingsParser.parseRating).cache()
 
     val usersGroupedRatings = allRatings.groupByKey().map(User.fromTuple)
-    val collectedUserRatings = User.createCombinations(usersGroupedRatings.collect().toSeq)
+    val toSeq: Seq[User] = usersGroupedRatings.collect().toSeq
+    val collectedUserRatings = User.createCombinations(toSeq)
 
     val neighbours = Neighbours.fromUsers(collectedUserRatings)
 
@@ -48,12 +45,6 @@ object MainApp {
 
     val collectedMoviesRatings = moviesRatings.collect().toList
 
-    val bestMoviesForUsers = interestingUsers.map(user => (user, new CFMoviesRecommender(neighbours, collectedMoviesRatings, CFMoviesRecommender.standardPrediction)
-      .forUser(user, top = 3)))
-
-    val bestNormalizedMoviesForUsers = interestingUsers.map(user => (user, new CFMoviesRecommender(neighbours, collectedMoviesRatings, CFMoviesRecommender.averageNormalizedPrediction)
-      .forUser(user, top = 3)))
-
     val users = moviesRatings.flatMap(mR => mR._2.map(r => (r.user, MovieRating(mR._1, r.rating))))
       .filter(_._2.rating.nonEmpty)
       .groupByKey()
@@ -61,7 +52,7 @@ object MainApp {
 
     val error = new RecommenderEvaluator().evaluateRecommender(users,
       (dataSplitter) => new CrossValidationPartitioner().allCombinationsTimestampBased(dataSplitter),
-      (n, mRatings) => new CFMoviesRecommender(neighbours, collectedMoviesRatings, CFMoviesRecommender.averageNormalizedPrediction))
+      (neighbours, mRatings) => new CFMoviesRecommender(neighbours, toSeq.toList, collectedMoviesRatings, CFMoviesRecommender.averageNormalizedPrediction))
 
     println(s"Final error : $error")
     val end = LocalDateTime.now()
@@ -69,6 +60,7 @@ object MainApp {
     println(Duration.between(start, end))
 
     println("Finished")
+    sc.stop()
   }
 
 }

@@ -27,10 +27,7 @@ object Neighbours {
   def sameUsers: ((User, User)) => Boolean = { s => !s._1.id.equals(s._2.id) }
 
   def usersAverageRating(topNeighboursMap: Map[String, Seq[NeighbourInfo]]): Map[String, UserAverageRating] = {
-    val map: Iterable[(String, UserAverageRating)] = topNeighboursMap.values.flatMap(identity(_)).map(s => (s.neighbourName, UserAverageRating(s.neighbourName, s.neighbourAverageRating)))
-    val b = map.groupBy(_._1).values.filter(x => x.size > 1)
-    println(b)
-    map.toMap
+    topNeighboursMap.values.flatMap(identity).map(s => (s.neighbourName, UserAverageRating(s.neighbourName, s.neighbourAverageRating))).toMap
   }
 
   def fromUsers(userRatings: Seq[(User, User)],
