@@ -41,7 +41,13 @@ class MeanReciprocalRankMetric extends RecommenderMetric {
     val moviesRatedByUser = userTestRatings.map(_.movie.id)
 
     def userWouldLikeRecommendedMovie(recs: (MovieRating, Int)): Boolean = {
-      moviesRatedByUser.contains(recs._1.movie.id) && recs._1.rating.getOrElse(0.0) > userMeanRating
+      def userLikedTheMovieInReallity: Boolean = {
+        userTestRatings.filter(_.movie.id.equals(recs._1.movie.id)).head.rating.getOrElse(0.0) > userMeanRating
+      }
+      def userWatchedTheMovie: Boolean = {
+        moviesRatedByUser.contains(recs._1.movie.id)
+      }
+      userWatchedTheMovie && userLikedTheMovieInReallity
     }
 
     @tailrec
