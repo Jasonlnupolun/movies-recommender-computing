@@ -15,11 +15,15 @@ case class User(id: String, ratings: List[MovieRating]) extends Serializable {
     ratings.map(x => Rating(id.toInt, x.movie.id.toInt, x.rating.getOrElse(0)))
   }
 
+  def meanRating(): Double = {
+    val realRatings = ratings.map(_.rating).filter(_.nonEmpty).map(_.get)
+    realRatings.sum / realRatings.size.toDouble
+  }
 }
 
 object User {
 
-  def fromTuple(tuple: Tuple2[String, Iterable[MovieRating]]) = {
+  def fromTuple(tuple: (String, Iterable[MovieRating])) = {
     User(tuple._1, tuple._2.toList)
   }
 

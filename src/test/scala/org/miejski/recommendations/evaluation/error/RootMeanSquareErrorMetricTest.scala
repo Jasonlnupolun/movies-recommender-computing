@@ -4,19 +4,16 @@ import org.apache.spark.rdd.RDD
 import org.miejski.recommendations.SparkSuite
 import org.miejski.recommendations.evaluation.model.{MovieRating, User}
 import org.miejski.recommendations.evaluation.partitioning.ValidationDataSplit
-import org.miejski.recommendations.model.Movie
 import org.miejski.recommendations.recommendation.MovieRecommender
-import org.scalamock.scalatest.MockFactory
 
-class RootMeanSquareErrorMetricTest extends SparkSuite
-  with MockFactory {
+class RootMeanSquareErrorMetricTest extends SparkSuite {
 
   test("should calculate error based on what errors from each fold is returned") {
     // given first fold
     var recommender = stub[MovieRecommender]
     (recommender.findRatings _).when("1", *)
-      .returns(List(MovieRating(Movie.id("m3"), Option.apply(2.0)), MovieRating(Movie.id("m4"), Option.apply(2.0))))
-    var rmseMetric = new RootMeanSquareErrorMetric(errorMethod)
+      .returns(List(mr("m3", 2.0), mr("m4", 2.0)))
+    val rmseMetric = new RootMeanSquareErrorMetric(errorMethod)
 
     val trainingData: RDD[User] = sc.parallelize(List())
     val testData = sc.parallelize(List(new User("1", List(mr("m3", 3.0), mr("m4", 4.0)))))
@@ -28,7 +25,7 @@ class RootMeanSquareErrorMetricTest extends SparkSuite
     // given second fold
     recommender = stub[MovieRecommender]
     (recommender.findRatings _).when("1", *)
-      .returns(List(MovieRating(Movie.id("m3"), Option.apply(1.0)), MovieRating(Movie.id("m4"), Option.apply(1.0))))
+      .returns(List(mr("m3", 1.0), mr("m4", 1.0)))
 
     //when second update occurs
     rmseMetric.updateMetrics(recommender, dataSplit)
