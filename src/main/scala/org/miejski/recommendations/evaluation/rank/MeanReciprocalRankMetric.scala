@@ -14,9 +14,11 @@ class MeanReciprocalRankMetric extends RecommenderMetric {
 
   override def updateMetrics(recommender: MovieRecommender, validationFold: ValidationDataSplit): Unit = {
 
-    val userRecommendations = validationFold.testData.map(td => (td.id, recommender.forUser(td.id, 100)))
-      .mapValues(ratings => ratings.map(singleRating => MovieRating(singleRating._1, Option.apply(singleRating._2))).toList)
+    val userRecommendations: Array[(String, scala.List[MovieRating])] = validationFold.testData
       .collect()
+      .map(td => (td.id, recommender.forUser(td.id, 100)))
+      .map(s => (s._1, s._2.map(singleRating => MovieRating(singleRating._1, Option.apply(singleRating._2))).toList))
+
     val realRatings = validationFold.testData.map(user => (user.id, user.ratings)).collectAsMap()
 
     userRecommendations.foreach(userRecommendation => {
@@ -46,7 +48,7 @@ class MeanReciprocalRankMetric extends RecommenderMetric {
     def getRank(recommendations: List[(MovieRating, Int)]): Double = recommendations match {
       case Nil => 0.0
       case head :: tail =>
-        if (userWouldLikeRecommendedMovie(head)) 1.0 / head._2
+        if (userWouldLikeRecommendedMovie(head)) 1.0 / (head._2 + 1)
         else getRank(recommendations.tail)
     }
 
