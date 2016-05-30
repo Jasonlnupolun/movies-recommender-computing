@@ -1,10 +1,10 @@
-package org.miejski.recommendations.evaluation
+package org.miejski.recommendations.evaluation.error
 
 import org.miejski.recommendations.evaluation.model.User
 import org.miejski.recommendations.helper.ShortCaseClasses
 import org.scalatest.{FunSuite, Matchers}
 
-class RecommenderEvaluatorTest extends FunSuite
+class RMSETest extends FunSuite
   with Matchers
   with ShortCaseClasses {
 
@@ -14,7 +14,7 @@ class RecommenderEvaluatorTest extends FunSuite
     val predictedRatings = List(mr("1", 3.0), mr("3", 2.0), mr("5", 3.0))
 
     //when
-    val error = new RecommenderEvaluator().calculateRootMeanSquareError(userWithRealRatings.ratings, predictedRatings, userWithRealRatings.id)
+    val error = RMSE.calculateRootMeanSquareError(userWithRealRatings.ratings, predictedRatings, userWithRealRatings.id)
 
     // then
     error shouldBe 1.2909944487358056

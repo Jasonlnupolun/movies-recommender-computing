@@ -17,11 +17,4 @@ class MainAppTest extends FunSuite
     parsedRow._1 shouldBe "userId"
     parsedRow._2 shouldBe first.drop(1).map(RatingsReader.toOptionalRating)
   }
-
-  test("should something") {
-
-    val second = Seq(2.0, 4.0, 3.0, 6.0, 1.0, 5.0)
-
-  }
-
 }
