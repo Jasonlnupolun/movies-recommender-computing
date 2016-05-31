@@ -22,7 +22,7 @@ class ModelEvaluatorRunner {
     val users: RDD[User] = readUsersRatings(sc)
 
     val start = LocalDateTime.now()
-    val error = new RecommenderEvaluator().evaluateRecommender(users, dataSplitter, recommenderCreator)
+    val error = RecommenderEvaluator().evaluateRecommender(users, dataSplitter, recommenderCreator)
 
     println(s"Final error : $error")
     val end = LocalDateTime.now()

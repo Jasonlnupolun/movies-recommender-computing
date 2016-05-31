@@ -11,7 +11,6 @@ class MeanReciprocalRankMetric extends RecommenderMetric {
 
   var rankForUser: List[(String, Double)] = List()
 
-
   override def updateMetrics(recommender: MovieRecommender, validationFold: ValidationDataSplit): Unit = {
 
     val userRecommendations: Array[(String, scala.List[MovieRating])] = validationFold.testData
@@ -33,9 +32,9 @@ class MeanReciprocalRankMetric extends RecommenderMetric {
   }
 
   override def printResult(): Unit = {
-
+    println("Mean reciprocal rank metric:")
+    rankForUser.foreach(println)
   }
-
 
   def getRecommendationRank(recommendations: List[(MovieRating, Int)], userTestRatings: List[MovieRating], userMeanRating: Double): Double = {
     val moviesRatedByUser = userTestRatings.map(_.movie.id)

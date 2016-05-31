@@ -4,6 +4,7 @@ import org.apache.spark.rdd.RDD
 import org.miejski.recommendations.evaluation.error.{RMSE, RootMeanSquareErrorMetric}
 import org.miejski.recommendations.evaluation.model.User
 import org.miejski.recommendations.evaluation.partitioning.{Partitioner, ValidationDataSplit}
+import org.miejski.recommendations.evaluation.rank.MeanReciprocalRankMetric
 import org.miejski.recommendations.model.{Movie, UserRating}
 import org.miejski.recommendations.neighbours.Neighbours
 import org.miejski.recommendations.recommendation.MovieRecommender
@@ -15,6 +16,7 @@ class RecommenderEvaluator(metrics: List[RecommenderMetric] = List()) extends Se
                           recommenderCreator: (Neighbours, RDD[(Movie, Seq[UserRating])]) => MovieRecommender) = {
     val validationDataSplit = dataSplitter.splitData(usersRatings)
     validationDataSplit.foreach(dataSplit => foldError(dataSplit, recommenderCreator))
+    metrics.foreach(_.printResult())
   }
 
   def foldError(validationFold: ValidationDataSplit,
@@ -34,7 +36,7 @@ class RecommenderEvaluator(metrics: List[RecommenderMetric] = List()) extends Se
 
 object RecommenderEvaluator {
   def apply() = {
-    val metrics = List(new RootMeanSquareErrorMetric(RMSE.calculateRootMeanSquareError))
+    val metrics = List(new RootMeanSquareErrorMetric(RMSE.calculateRootMeanSquareError), new MeanReciprocalRankMetric)
     new RecommenderEvaluator(metrics)
   }
 }
